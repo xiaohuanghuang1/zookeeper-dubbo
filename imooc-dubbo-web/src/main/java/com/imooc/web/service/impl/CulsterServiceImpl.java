@@ -19,7 +19,10 @@ public class CulsterServiceImpl implements CulsterService {
 
 	@Autowired
 	private OrdersService ordersService;
-	
+
+	@Autowired
+	private DistributedLock distributedLock;
+
 	@Override
 	public void doBuyItem(String itemId) {
 		// 减少库存
@@ -31,7 +34,11 @@ public class CulsterServiceImpl implements CulsterService {
 	
 	@Override
 	public boolean displayBuy(String itemId) {
-		
+
+
+		//获取锁
+		distributedLock.getLock();
+
 		int buyCounts = 5;
 		
 		// 1. 判断库存
@@ -39,21 +46,39 @@ public class CulsterServiceImpl implements CulsterService {
 		if (stockCounts < buyCounts) {
 			log.info("库存剩余{}件，用户需求量{}件，库存不足，订单创建失败...", 
 					stockCounts, buyCounts);
+
+			//释放锁
+			distributedLock.releaseLock();
 			return false;
 		}
 		
 		// 2. 创建订单
 		boolean isOrderCreated = ordersService.createOrder(itemId);
-		
+
+		//模拟高并发情况
+		try
+		{
+			Thread.sleep(5000);
+		} catch (InterruptedException e)
+		{
+			distributedLock.releaseLock();
+			e.printStackTrace();
+		}
+
 		// 3. 创建订单成功后，扣除库存
 		if (isOrderCreated) {
 			log.info("订单创建成功...");
 			itemService.displayReduceCounts(itemId, buyCounts);
 		} else {
+
+			//释放锁
+			distributedLock.releaseLock();
 			log.info("订单创建失败...");
 			return false;
 		}
-		
+
+		//释放锁
+		distributedLock.releaseLock();
 		return true;
 	}
 	

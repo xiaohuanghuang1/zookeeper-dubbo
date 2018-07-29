@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.2.xsd">
+
+    <bean id="retryPolicy" class="org.apache.curator.retry.RetryNTimes">
+        <constructor-arg index="0" value="10"></constructor-arg>
+        <constructor-arg index="1" value="5000"></constructor-arg>
+    </bean>
+
+    <bean id="zkClient" class="org.apache.curator.framework.CuratorFrameworkFactory" factory-method="newClient" init-method="start">
+        <!--zk服务器地址-->
+        <constructor-arg index="0" value="192.168.118.130:2181,192.168.118.130:2182,192.168.118.130:2183"></constructor-arg>
+        <!--会话超时时间-->
+        <constructor-arg index="1" value="10000"></constructor-arg>
+        <!--创建连接时间-->
+        <constructor-arg index="2" value="5000"></constructor-arg>
+        <!--重试策略-->
+        <constructor-arg index="3" ref="retryPolicy"></constructor-arg>
+    </bean>
+
+    <bean id="zkCurator" class="com.imooc.web.util.ZKCurator" init-method="init">
+        <constructor-arg index="0" ref="zkClient"></constructor-arg>
+    </bean>
+
+
+
+    <beans
